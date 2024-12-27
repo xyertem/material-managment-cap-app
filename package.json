@@ -17,14 +17,42 @@
     "@sap/cds-dk": "^8"
   },
   "scripts": {
-    "start": "cds-serve"
+    "start": "cds-serve",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "build:hana": "cds build --for hana",
+    "deploy:cf": "mbt build && cf deploy mta_archives/material-managment-cap-app_1.0.0.mtar",
+    "deploy:local": "cds deploy --to sqlite",
+    "deploy:hana": "cds deploy --to hana",
+    "srv:hybrid": "cds watch --profile hybrid --port 4004",
+    "srv:local": "cds watch --port 4004",
+    "undeploy": "cf undeploy epmprfscrcapapp --delete-services --delete-service-keys --delete-service-brokers"
   },
   "cds": {
     "sql": {
       "native_hana_associations": false
     },
     "requires": {
-      "auth": "xsuaa"
+     "[production]": {
+        "db": {
+          "kind": "hana",
+          "model": "srv",
+          "deploy-format": "hdbtable"
+        },
+        "auth": "xsuaa"
+      },
+      "[hybrid]": {
+        "db": {
+          "kind": "hana",
+          "model": "srv"
+        },
+        "auth": "xsuaa"
+      },
+      "[development]": {
+        "db": {
+          "kind": "sqlite",
+          "model": "srv"
+        }
+      }
     }
   }
 }
