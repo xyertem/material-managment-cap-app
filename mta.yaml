@@ -1,56 +1,103 @@
 _schema-version: 3.3.0
 ID: material-managment-cap-app
+description: A simple CAP project.
 version: 1.0.0
-description: "A simple CAP project."
+modules:
+- name: material-managment-cap-app-srv
+  type: nodejs
+  path: gen/srv
+  properties:
+    OPTIMIZE_MEMORY: true
+  requires:
+  - name: material-managment-cap-app-db
+  - name: material-managment-cap-app-auth
+  provides:
+  - name: srv-api
+    properties:
+      forwardAuthToken: true
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+    readiness-health-check-http-endpoint: /health
+    readiness-health-check-type: http
+  build-parameters:
+    builder: npm
+- name: material-managment-cap-app-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: material-managment-cap-app-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: material-managment-cap-app-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: material-managment-cap-app-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - materialmanagmentcapappuiproductlist.zip
+      name: materialmanagmentcapappuiproductlist
+      target-path: resources/
+- name: materialmanagmentcapappuiproductlist
+  type: html5
+  path: app/productlist
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: material-managment-cap-app-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+- name: material-managment-cap-app-auth
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      tenant-mode: dedicated
+      xsappname: material-managment-cap-app
+    path: ./xs-security.json
+    service: xsuaa
+    service-plan: application
+- name: material-managment-cap-app-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: material-managment-cap-app-html5-service
+    service-plan: app-host
+- name: material-managment-cap-app-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: false
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: material-managment-cap-app-destination-service
+    service-plan: lite
 parameters:
+  deploy_mode: html5-repo
   enable-parallel-deployments: true
 build-parameters:
   before-all:
-    - builder: custom
-      commands:
-        - npm ci
-        - npx cds build --production
-modules:
-  - name: material-managment-cap-app-srv
-    type: nodejs
-    path: gen/srv
-    parameters:
-      buildpack: nodejs_buildpack
-      readiness-health-check-type: http
-      readiness-health-check-http-endpoint: /health
-    properties:
-      OPTIMIZE_MEMORY: true
-    build-parameters:
-      builder: npm
-    provides:
-      - name: srv-api # required by consumers of CAP services (e.g. approuter)
-        properties:
-          srv-url: ${default-url}
-          forwardAuthToken: true
-    requires:
-      - name: material-managment-cap-app-db
-      - name: material-managment-cap-app-auth
-
-  - name: material-managment-cap-app-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: material-managment-cap-app-db
-
-resources:
-  - name: material-managment-cap-app-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
-  - name: material-managment-cap-app-auth
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
-      config:
-        xsappname: material-managment-cap-app
-        tenant-mode: dedicated
+  - builder: custom
+    commands:
+    - npm ci
+    - npx cds build --production

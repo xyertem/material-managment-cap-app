@@ -14,7 +14,9 @@
   "devDependencies": {
     "@cap-js/cds-types": "^0.7.0",
     "@cap-js/sqlite": "^1",
-    "@sap/cds-dk": "^8"
+    "@sap/cds-dk": "^8",
+    "rimraf": "^5.0.5",
+    "mbt": "^1.2.29"
   },
   "scripts": {
     "start": "cds-serve",
@@ -25,14 +27,16 @@
     "deploy:hana": "cds deploy --to hana",
     "srv:hybrid": "cds watch --profile hybrid --port 4004",
     "srv:local": "cds watch --port 4004",
-    "undeploy": "cf undeploy epmprfscrcapapp --delete-services --delete-service-keys --delete-service-brokers"
+    "undeploy": "cf undeploy material-managment-cap-app --delete-services --delete-service-keys --delete-service-brokers",
+    "watch-productlist": "cds watch --open productlist/webapp/index.html?sap-ui-xx-viewCache=false",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1"
   },
   "cds": {
     "sql": {
       "native_hana_associations": false
     },
     "requires": {
-     "[production]": {
+      "[production]": {
         "db": {
           "kind": "hana",
           "model": "srv",
@@ -54,5 +58,8 @@
         }
       }
     }
-  }
+  },
+  "sapux": [
+    "app/productlist"
+  ]
 }
